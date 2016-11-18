@@ -22,5 +22,8 @@ struct	Snake
 		m_Position = new POINT[Longueur]{ 0 };
 		m_IdexTete = 0;
 		m_Vitesse = Vitesse;
+
 	}
+
+
 };
