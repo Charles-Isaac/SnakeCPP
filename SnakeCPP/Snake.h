@@ -43,6 +43,6 @@ public: //Met TOUTES le variables membres publiques
 	//int Snake::LongueurDuSerpent();  //retourne la longueur du serpent (nombre de segments)
 	void Snake::Allonger(int Longueur); //ajoute n(Longueur) nombre de segments
 	bool Snake::Update(char DirectionDuDeplacement, Point WindowSize);
-	
+	bool Snake::Update(Point WindowSize);
 
 };
