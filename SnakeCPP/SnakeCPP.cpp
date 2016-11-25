@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 #include "SnakeCPP.h"
+#include "Snake.h"
+
 
 #define MAX_LOADSTRING 100
 
@@ -150,7 +152,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EndPaint(hWnd, &ps);
         }
         break;
-    case WM_DESTROY:
+	case WM_DESTROY:
         PostQuitMessage(0);
         break;
     default:

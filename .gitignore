@@ -82,3 +82,7 @@ Temporary Items
 *.exe
 *.out
 *.app
+
+
+*.log
+*.tlog
