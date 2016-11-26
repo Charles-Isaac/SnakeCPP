@@ -20,7 +20,7 @@ public: //Met TOUTES le variables membres publiques
 		m_LongueurDuSerpentCourant = 5;
 		m_IndexTete = 0;
 		m_Vitesse = 100;
-		m_Direction = 'd';
+		m_Direction = 'D';
 	} 
 	Snake::Snake(int Vitesse, int Longueur)
 	{
@@ -28,7 +28,7 @@ public: //Met TOUTES le variables membres publiques
 		m_Position = new Point[Longueur];
 		m_LongueurDuSerpentCourant = Longueur;
 		m_IndexTete = 0;
-		m_Direction = 'd';
+		m_Direction = 'D';
 	}
 	Snake::Snake(int Longueur)
 	{
@@ -36,7 +36,7 @@ public: //Met TOUTES le variables membres publiques
 		m_LongueurDuSerpentCourant = Longueur;
 		m_IndexTete = 0;
 		m_Vitesse = 100;
-		m_Direction = 'd';
+		m_Direction = 'D';
 	}
 
 	//Les methodes utilisables:
@@ -44,5 +44,6 @@ public: //Met TOUTES le variables membres publiques
 	void Snake::Allonger(int Longueur); //ajoute n(Longueur) nombre de segments
 	bool Snake::Update(char DirectionDuDeplacement, Point WindowSize);
 	bool Snake::Update(Point WindowSize);
+	
 
 };

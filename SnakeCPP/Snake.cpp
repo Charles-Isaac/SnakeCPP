@@ -4,15 +4,15 @@
 /*
 int Snake::LongueurDuSerpent()
 {
-	return sizeof(m_Position) / sizeof(Point);
+return sizeof(m_Position) / sizeof(Point);
 }*/
 void Snake::Allonger(int Longueur = 1)
 {
-	
-	
-	
+
+
+
 	Point *NewSnake = new Point[m_LongueurDuSerpentCourant + Longueur];
-	
+
 	NewSnake[0] = m_Position[m_IndexTete];
 	Point* p = m_Position;
 	for (int i = 0; i < Longueur; i++)
@@ -27,10 +27,10 @@ void Snake::Allonger(int Longueur = 1)
 	}
 
 	m_LongueurDuSerpentCourant += Longueur;
-	
+
 	m_IndexTete = 0;
 	delete[] m_Position;
-	
+
 	m_Position = NewSnake;
 	//delete[] NewSnake;
 }
@@ -49,17 +49,17 @@ bool Snake::Update(char DirectionDuDeplacement, Point WindowSize)
 
 	switch (m_Direction)
 	{
-	case 'w':
-		(*(m_Position + m_IndexTete)).Y--;
+	case 'W':
+		(*(m_Position + m_IndexTete)).Y -= m_Vitesse;
 		break;
-	case 'a':
-		(*(m_Position + m_IndexTete)).X--;
+	case 'A':
+		(*(m_Position + m_IndexTete)).X -= m_Vitesse;
 		break;
-	case 's':
-		(*(m_Position + m_IndexTete)).Y++;
+	case 'S':
+		(*(m_Position + m_IndexTete)).Y += m_Vitesse;
 		break;
-	case 'd':
-		(*(m_Position + m_IndexTete)).X++;
+	case 'D':
+		(*(m_Position + m_IndexTete)).X += m_Vitesse;
 		break;
 	default:
 		(*(m_Position + m_IndexTete)).X = 0;
@@ -93,17 +93,17 @@ bool Snake::Update(Point WindowSize)
 
 	switch (m_Direction)
 	{
-	case 'w':
-		(*(m_Position + m_IndexTete)).Y--;
+	case 'W':
+		(*(m_Position + m_IndexTete)).Y -= m_Vitesse;
 		break;
-	case 'a':
-		(*(m_Position + m_IndexTete)).X--;
+	case 'A':
+		(*(m_Position + m_IndexTete)).X-= m_Vitesse;
 		break;
-	case 's':
-		(*(m_Position + m_IndexTete)).Y++;
+	case 'S':
+		(*(m_Position + m_IndexTete)).Y += m_Vitesse;
 		break;
-	case 'd':
-		(*(m_Position + m_IndexTete)).X++;
+	case 'D':
+		(*(m_Position + m_IndexTete)).X+= m_Vitesse;
 		break;
 	default:
 		(*(m_Position + m_IndexTete)).X = 0;
