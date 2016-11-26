@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 #include "SnakeCPP.h"
+#include "Snake.h"
+#include <time.h>
 
 #define MAX_LOADSTRING 100
 //déclaration de la structure joueur
@@ -16,19 +18,21 @@ struct SJoueur
 HINSTANCE hInst;                                // instance actuelle
 WCHAR szTitle[MAX_LOADSTRING];                  // Le texte de la barre de titre
 WCHAR szWindowClass[MAX_LOADSTRING];            // le nom de la classe de fenêtre principale
-HWND hWnd, hWnd2;//fenêtre joueur 1 et joueur 2
+HWND hWnd;
 SJoueur Joueur1, Joueur2;
 HANDLE Fichier;
-
-
+Snake serp = Snake(11, 20);
+Point m_Limite = Point(500, 500);
+INT APP;
 
 // Pré-déclarations des fonctions incluses dans ce module de code :
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-BOOL				LectureFichier(char Nom[], int Joueur);
-BOOL				EcritureFichier();
+BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
+BOOL				EcritureFichier(bool Joueur, SJoueur P);//écrit dans le fichier à la fin si je joueur n'existe pas
+//DWORD WINAPI		GestionGame(LPVOID lParam); //méthode pour thread															//sinon écrit a sa position
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -44,14 +48,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_SNAKECPP, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
+	if(lpCmdLine == NULL)
+	{ 
+		STARTUPINFO info;
+		PROCESS_INFORMATION infop;
+		char p[1];
+		p[0] = 'C';
+		char CharP;
+		GetModuleFileName(NULL, &CharP, NULL);
+		CreateProcess(&CharP, p, NULL, 0, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &info, &infop);
+	}
 
     // Effectue l'initialisation de l'application :
     if (!InitInstance (hInstance, nCmdShow))
     {
         return FALSE;
     }
+
 	DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);//ouvre le dialog à l'ouverture de la fenêtre J1
-	DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd2, About); //ouvre le dialog à l'ouverture de la fenêtre J2
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SNAKECPP));
 
@@ -115,21 +129,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       10, 10, 500, 500, nullptr, nullptr, hInstance, nullptr);
 
-   hWnd2 = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-	   520, 10, 500, 500, nullptr, nullptr, hInstance, nullptr);
-
-
+   
+   //DWORD IDThread;
+   //HANDLE handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&GestionGame, NULL,NULL, &IDThread);
+   
 
    if (!hWnd)
    {
       return FALSE;
    }
+   
+   SetTimer(hWnd, 1, 100, NULL);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
-
-   ShowWindow(hWnd2, nCmdShow);
-   UpdateWindow(hWnd2);
 
    return TRUE;
 }
@@ -165,11 +178,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+	case WM_TIMER:
+	{
+		
+		if (serp.Update(serp.m_Direction, m_Limite))
+		{
+			KillTimer(hWnd, 1);
+			MessageBoxA(hWnd, "boom bitch", "Collision genre", NULL);
+		}
+		InvalidateRect(hWnd, NULL, true);
+		UpdateWindow(hWnd);
+
+	}
+	break;
+	case WM_KEYDOWN:
+	{ 	
+		serp.m_Direction = (char)wParam;
+	}
+	break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: ajoutez le code de dessin qui utilise hdc ici...
+			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
+			{
+				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
+			}
+			
             EndPaint(hWnd, &ps);
         }
         break;
@@ -223,7 +259,7 @@ BOOL LectureFichier(char Nom[], int Joueur)
 	SetFilePointer(Fichier, 0, 0, 0);
 
 	//Boucle de recherche
-	while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0)
+	while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}
 	
 		
 	if (NbByte == 0)//Joueur non trouvé
@@ -246,7 +282,7 @@ BOOL LectureFichier(char Nom[], int Joueur)
 }
 
 
-BOOL EcritureFichier()
+BOOL EcritureFichier(bool Joueur, SJoueur P)
 {
 	SJoueur J;
 	DWORD NbByte;
@@ -262,23 +298,33 @@ BOOL EcritureFichier()
 		return false;
 	}
 
-	SetFilePointer(Fichier, 0, 0, 0);
-	while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && NbByte != 0)
+	//si joueur n'est pas dans le fichier l'écrit à la fin du fichier
+	if (Joueur == false)
 	{
-		if (J.Nom == Joueur1.Nom)
+		SetFilePointer(Fichier, 0, 0, 2);
+		WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//écrit joueur à la fin du fichier
+	}
+	else
+	{
+		SetFilePointer(Fichier, 0, 0, 0);//remet le pointer au début du fichier
+		//boucle qui cherche le joueur
+		while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != P.Nom && NbByte != 0) {}
+
+		//écriture du joueur à sa position
+		if (NbByte > 0)
 		{
-			SetFilePointer(Fichier, -StructLong, 0, 1);//recule d'une position et écrit par dessus
-			WriteFile(Fichier, &Joueur1, StructLong, &NbByte, NULL);//écrit joueur 1 à ca position
+			SetFilePointer(Fichier, -StructLong, 0, 1);
+			WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//réécrit joueur à sa position
 		}
-		else
-		{
-			if (J.Nom == Joueur2.Nom)
-			{
-				SetFilePointer(Fichier, -StructLong, 0, 1);//recule d'une position et écrit par dessus
-				WriteFile(Fichier, &Joueur2, StructLong, &NbByte, NULL);//écrit joueur 2 à ca position
-			}
-		}
+	
 	}
 
 	return true;
 }
+
+/*
+DWORD WINAPI GestionGame(LPVOID lParam)
+{
+
+}
+*/
