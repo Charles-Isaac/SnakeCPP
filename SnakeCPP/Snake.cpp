@@ -39,7 +39,7 @@ bool Snake::Update(char DirectionDuDeplacement, Point WindowSize)
 {
 	//a = gauche, w = haut , d = droit , s = bas
 
-	m_Direction = DirectionDuDeplacement;
+	
 
 
 
@@ -47,23 +47,43 @@ bool Snake::Update(char DirectionDuDeplacement, Point WindowSize)
 	m_IndexTete = (m_IndexTete + 1) % m_LongueurDuSerpentCourant;
 
 
-	switch (m_Direction)
+	switch (DirectionDuDeplacement)
 	{
 	case 'W':
 		(*(m_Position + m_IndexTete)).Y -= m_Vitesse;
+		m_Direction = DirectionDuDeplacement;
 		break;
 	case 'A':
 		(*(m_Position + m_IndexTete)).X -= m_Vitesse;
+		m_Direction = DirectionDuDeplacement;
 		break;
 	case 'S':
 		(*(m_Position + m_IndexTete)).Y += m_Vitesse;
+		m_Direction = DirectionDuDeplacement;
 		break;
 	case 'D':
 		(*(m_Position + m_IndexTete)).X += m_Vitesse;
+		m_Direction = DirectionDuDeplacement;
 		break;
 	default:
-		(*(m_Position + m_IndexTete)).X = 0;
-		(*(m_Position + m_IndexTete)).Y = 0;
+		switch (m_Direction)
+		{
+		case 'W':
+			(*(m_Position + m_IndexTete)).Y -= m_Vitesse;
+			break;
+		case 'A':
+			(*(m_Position + m_IndexTete)).X -= m_Vitesse;
+			break;
+		case 'S':
+			(*(m_Position + m_IndexTete)).Y += m_Vitesse;
+			break;
+		case 'D':
+			(*(m_Position + m_IndexTete)).X += m_Vitesse;
+			break;
+		default:
+			throw("Direction invalide");
+			break;
+		}
 		break;
 	}
 

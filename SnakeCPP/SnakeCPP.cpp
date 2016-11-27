@@ -21,9 +21,10 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // le nom de la classe de fenêtr
 HWND hWnd;
 SJoueur Joueur1, Joueur2;
 HANDLE Fichier;
-Snake serp = Snake(11, 20);
+Snake serp = Snake(9, 20);
 Point m_Limite = Point(500, 500);
 INT APP;
+char Direction = 'D';
 
 // Pré-déclarations des fonctions incluses dans ce module de code :
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -52,11 +53,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	{ 
 		STARTUPINFO info;
 		PROCESS_INFORMATION infop;
-		char p[1];
+		wchar_t p[1];
 		p[0] = 'C';
-		char CharP;
-		GetModuleFileName(NULL, &CharP, NULL);
-		CreateProcess(&CharP, p, NULL, 0, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &info, &infop);
+		wchar_t CharP[1000];
+		
+		GetModuleFileName(NULL, CharP, NULL);
+		CreateProcess(CharP, p, NULL, 0, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &info, &infop);
 	}
 
     // Effectue l'initialisation de l'application :
@@ -181,7 +183,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 	{
 		
-		if (serp.Update(serp.m_Direction, m_Limite))
+		if (serp.Update(Direction, m_Limite))
 		{
 			KillTimer(hWnd, 1);
 			MessageBoxA(hWnd, "boom bitch", "Collision genre", NULL);
@@ -193,7 +195,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_KEYDOWN:
 	{ 	
-		serp.m_Direction = (char)wParam;
+		Direction = (char)wParam;
 	}
 	break;
     case WM_PAINT:
@@ -248,7 +250,7 @@ BOOL LectureFichier(char Nom[], int Joueur)
 
 	if (Fichier == NULL)
 	{
-		Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		Fichier = CreateFile(L"Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
 
 	if (Fichier == INVALID_HANDLE_VALUE)
@@ -290,7 +292,7 @@ BOOL EcritureFichier(bool Joueur, SJoueur P)
 
 	if (Fichier == NULL)
 	{
-		Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		Fichier = CreateFile(L"Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
 
 	if (Fichier == INVALID_HANDLE_VALUE)
