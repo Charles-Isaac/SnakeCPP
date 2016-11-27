@@ -26,6 +26,7 @@ HWND hWndJ2;
 
 SJoueur Joueur1, Joueur2;
 Snake serp = Snake(11, 20);
+Snake serp2 = Snake(11, 20);
 Point m_Limite;
 INT APP;
 
@@ -61,7 +62,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-	// Ouvre le dialog à l'ouverture de la fenêtre J1 :
+	// Ouvre le DialogBox About à l'ouverture de la fenêtre J1 :
 	DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWndJ1, About);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SNAKECPP));
@@ -144,9 +145,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
-   
-   // Initialise le Timer :
-   SetTimer(hWndJ1, 1, 100, NULL);
 
    // Affichage des fenêtres :
    ShowWindow(hWndJ1, nCmdShow);
@@ -185,10 +183,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 		{
 			// Si le serpent entre en collision :
-			if (serp.Update(serp.m_Direction, m_Limite))
+			if (serp.Update(serp.m_Direction, m_Limite) || serp2.Update(serp2.m_Direction, m_Limite))
 			{
-				KillTimer(hWnd, 1);
-				MessageBoxA(hWnd, "boom bitch joueur 1", "Collision genre", NULL);
+				KillTimer(hWndJ1, 1);
+				KillTimer(hWndJ2, 2);
+				MessageBoxA(hWnd, "boom bitch", "Collision genre", NULL);
 			}
 
 			InvalidateRect(hWnd, NULL, true);
@@ -197,8 +196,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_KEYDOWN:
 		{ 	
-			// Direction du serpent selon la touche du clavier :
+			// Direction du serpent selon " W A S D " :
 			serp.m_Direction = (char)wParam;
+
+			// Direction du serpent joueur 2 selon les flèches :
+			/*switch (serp2.m_Direction)
+			{
+			case VK_UP:
+				SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction='W', NULL);
+				break;
+			case VK_DOWN:
+				SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'S', NULL);
+				break;
+			case VK_LEFT:
+				SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'A', NULL);
+				break;
+			case VK_RIGHT:
+				SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'D', NULL);
+				break;
+			}*/
+			/*switch (serp2.m_Direction)
+			{
+			case VK_UP:
+				serp2.m_Direction = 'W';
+				break;
+			case VK_DOWN:
+				serp2.m_Direction = 'S';
+				break;
+			case VK_LEFT:
+				serp2.m_Direction = 'A';
+				break;
+			case VK_RIGHT:
+				serp2.m_Direction = 'D';
+				break;
+			}*/
 		}
 		break;
     case WM_PAINT:
@@ -206,11 +237,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             
-			// Dessine le serpent :
-			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
+			// Dessine le serpent Joueur1 :
+			if (hWnd == hWndJ1)
 			{
-				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
-			}
+				for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
+				{
+					Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
+				}
+			}			
+
+			// Dessine le serpent Joueur2 :
+			if (hWnd == hWndJ2)
+			{
+				for (int I = 0; I < serp2.m_LongueurDuSerpentCourant; I++)
+				{
+					Rectangle(hdc, serp2.m_Position[I].X, serp2.m_Position[I].Y, serp2.m_Position[I].X + 10, serp2.m_Position[I].Y + 10);
+				}
+			}			
 			
             EndPaint(hWnd, &ps);
         }
@@ -239,6 +282,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
+			// Initialise le Timer :
+			SetTimer(hWndJ1, 1, 1000, NULL);
+			SetTimer(hWndJ2, 2, 1000, NULL);
+
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
@@ -271,8 +318,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	SetFilePointer(Fichier, 0, 0, 0);
 
 	//Boucle de recherche
-	while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}
-	
+	while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}	
 		
 	if (NbByte == 0)//Joueur non trouvé
 	{
@@ -282,7 +328,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if (Joueur == 1)
 		{
-			Joueur1 = J; //complie la structure du joueur 1
+			Joueur1 = J; //remplie la structure du joueur 1
 		}
 		else
 		{
