@@ -1,38 +1,46 @@
-// SnakeCPP.cpp : définit le point d'entrée pour l'application.
-//
-
 #include "stdafx.h"
 #include "SnakeCPP.h"
 #include "Snake.h"
 #include <time.h>
 
+
 #define MAX_LOADSTRING 100
-//déclaration de la structure joueur
+
+
+//DÃ©claration de la structure joueur :
 struct SJoueur
 {
 	char Nom[50];
 	int NbreVictoire;
 };
 
-// Variables globales :
-HINSTANCE hInst;                                // instance actuelle
-WCHAR szTitle[MAX_LOADSTRING];                  // Le texte de la barre de titre
-WCHAR szWindowClass[MAX_LOADSTRING];            // le nom de la classe de fenêtre principale
-HWND hWnd;
-SJoueur Joueur1, Joueur2;
+
+// Variables globalesÂ :
+HINSTANCE hInst;                               
+WCHAR szTitle[MAX_LOADSTRING];                  
+WCHAR szWindowClass[MAX_LOADSTRING];            
+
 HANDLE Fichier;
+HWND hWndJ1;
+HWND hWndJ2;
+
+SJoueur Joueur1, Joueur2;
 Snake serp = Snake(11, 20);
-Point m_Limite = Point(500, 500);
+Point m_Limite;
 INT APP;
 
-// Pré-déclarations des fonctions incluses dans ce module de code :
+
+
+// PrÃ©-dÃ©clarations des fonctions :
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
-BOOL				EcritureFichier(bool Joueur, SJoueur P);//écrit dans le fichier à la fin si je joueur n'existe pas
-//DWORD WINAPI		GestionGame(LPVOID lParam); //méthode pour thread															//sinon écrit a sa position
+//BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
+//BOOL				EcritureFichier(bool Joueur, SJoueur P);//Ã©crit dans le fichier Ã  la fin si je joueur n'existe pas
+//DWORD WINAPI		GestionGame(LPVOID lParam); //mÃ©thode pour thread															//sinon Ã©crit a sa position
+
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -42,36 +50,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: placez ici le code.
-
-    // Initialise les chaînes globales
+    // Initialise les chaÃ®nes globales :
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_SNAKECPP, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
-	if(lpCmdLine == NULL)
-	{ 
-		STARTUPINFO info;
-		PROCESS_INFORMATION infop;
-		char p[1];
-		p[0] = 'C';
-		char CharP;
-		GetModuleFileName(NULL, &CharP, NULL);
-		CreateProcess(&CharP, p, NULL, 0, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &info, &infop);
-	}
 
-    // Effectue l'initialisation de l'application :
+    // Effectue l'initialisation de l'applicationÂ :
     if (!InitInstance (hInstance, nCmdShow))
     {
         return FALSE;
     }
 
-	DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);//ouvre le dialog à l'ouverture de la fenêtre J1
+	// Ouvre le dialog Ã  l'ouverture de la fenÃªtre J1 :
+	DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWndJ1, About);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SNAKECPP));
 
     MSG msg;
 
-    // Boucle de messages principale :
+    // Boucle de messages principaleÂ :
     while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -86,11 +83,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 
-//
-//  FONCTION : MyRegisterClass()
-//
-//  BUT : inscrit la classe de fenêtre.
-//
+
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -112,51 +105,61 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-//
-//   FONCTION : InitInstance(HINSTANCE, int)
-//
-//   BUT : enregistre le handle de l'instance et crée une fenêtre principale
-//
-//   COMMENTAIRES :
-//
-//        Dans cette fonction, nous enregistrons le handle de l'instance dans une variable globale, puis
-//        créons et affichons la fenêtre principale du programme.
-//
+
+
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Stocke le handle d'instance dans la variable globale
+   hInst = hInstance; 
 
-   hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      10, 10, 500, 500, nullptr, nullptr, hInstance, nullptr);
+   // CrÃ©ation de la fenÃªtre de droite :
+   hWndJ1 = CreateWindowEx(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
+	   szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+	
+   // Ouverture du mÃªme processus :
+   DWORD IdentifiantProc = GetProcessId(hWndJ1);
+   HANDLE h2 = OpenProcess(IdentifiantProc, TRUE, GetCurrentProcessId());
+   hWndJ2 = GetActiveWindow();
 
-   
+   // CrÃ©ation de la fenÃªtre de gauche :
+   hWndJ2 = CreateWindowEx(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
+	   szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+
+   // Largeur et hauteur de l'Ã©cran :
+   HDC hDC = ::GetWindowDC(NULL);
+   int L = GetDeviceCaps(hDC, HORZRES);
+   int H = GetDeviceCaps(hDC, VERTRES);
+
+   // Limites de dÃ©placement du serpent :
+   m_Limite = Point(L / 2, H);
+
+   // Postion des fenÃªtres :
+   ::SetWindowPos(hWndJ1, NULL, 0, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
+   ::SetWindowPos(hWndJ2, NULL, L - L / 2, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
+
    //DWORD IDThread;
-   //HANDLE handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&GestionGame, NULL,NULL, &IDThread);
-   
+   //HANDLE handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&GestionGame, NULL,NULL, &IDThread);  
 
-   if (!hWnd)
+   if (!hWndJ1)
    {
       return FALSE;
    }
    
-   SetTimer(hWnd, 1, 100, NULL);
+   // Initialise le Timer :
+   SetTimer(hWndJ1, 1, 100, NULL);
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+   // Affichage des fenÃªtres :
+   ShowWindow(hWndJ1, nCmdShow);
+   UpdateWindow(hWndJ1);
+   ShowWindow(hWndJ2, nCmdShow);
+   UpdateWindow(hWndJ2);
 
    return TRUE;
 }
 
-//
-//  FONCTION : WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  BUT :  traite les messages pour la fenêtre principale.
-//
-//  WM_COMMAND - traite le menu de l'application
-//  WM_PAINT - dessine la fenêtre principale
-//  WM_DESTROY - génère un message d'arrêt et retourne
-//
-//
+
+
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -164,7 +167,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-            // Analyse les sélections de menu :
+
+            // Analyse les sÃ©lections de menuÂ :
             switch (wmId)
             {
             case IDM_ABOUT:
@@ -179,28 +183,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
 	case WM_TIMER:
-	{
-		
-		if (serp.Update(serp.m_Direction, m_Limite))
 		{
-			KillTimer(hWnd, 1);
-			MessageBoxA(hWnd, "boom bitch", "Collision genre", NULL);
-		}
-		InvalidateRect(hWnd, NULL, true);
-		UpdateWindow(hWnd);
+			// Si le serpent entre en collision :
+			if (serp.Update(serp.m_Direction, m_Limite))
+			{
+				KillTimer(hWnd, 1);
+				MessageBoxA(hWnd, "boom bitch joueur 1", "Collision genre", NULL);
+			}
 
-	}
-	break;
+			InvalidateRect(hWnd, NULL, true);
+			UpdateWindow(hWnd);
+		}
+		break;
 	case WM_KEYDOWN:
-	{ 	
-		serp.m_Direction = (char)wParam;
-	}
-	break;
+		{ 	
+			// Direction du serpent selon la touche du clavier :
+			serp.m_Direction = (char)wParam;
+		}
+		break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: ajoutez le code de dessin qui utilise hdc ici...
+            
+			// Dessine le serpent :
 			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
 			{
 				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
@@ -218,7 +224,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-// Gestionnaire de messages pour la boîte de dialogue À propos de.
+
+
+
+// BoÃ®te de dialogue Ã€ propos de :
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -239,8 +248,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
+
+
+
 //fonction de lecture dans le fichier binaire
-BOOL LectureFichier(char Nom[], int Joueur)
+/*BOOL LectureFichier(char Nom[], int Joueur)
 {
 	DWORD NbByte;
 	SJoueur J;
@@ -248,7 +260,7 @@ BOOL LectureFichier(char Nom[], int Joueur)
 
 	if (Fichier == NULL)
 	{
-		Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		Fichier = CreateFile(".\Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
 
 	if (Fichier == INVALID_HANDLE_VALUE)
@@ -262,7 +274,7 @@ BOOL LectureFichier(char Nom[], int Joueur)
 	while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}
 	
 		
-	if (NbByte == 0)//Joueur non trouvé
+	if (NbByte == 0)//Joueur non trouvÃ©
 	{
 		return false;
 	}
@@ -279,10 +291,10 @@ BOOL LectureFichier(char Nom[], int Joueur)
 	}
 
 	return true;
-}
+}*/
 
 
-BOOL EcritureFichier(bool Joueur, SJoueur P)
+/*BOOL EcritureFichier(bool Joueur, SJoueur P)
 {
 	SJoueur J;
 	DWORD NbByte;
@@ -290,7 +302,7 @@ BOOL EcritureFichier(bool Joueur, SJoueur P)
 
 	if (Fichier == NULL)
 	{
-		Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		//Fichier = CreateFile(".\Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
 
 	if (Fichier == INVALID_HANDLE_VALUE)
@@ -298,29 +310,29 @@ BOOL EcritureFichier(bool Joueur, SJoueur P)
 		return false;
 	}
 
-	//si joueur n'est pas dans le fichier l'écrit à la fin du fichier
+	//si joueur n'est pas dans le fichier l'Ã©crit Ã  la fin du fichier
 	if (Joueur == false)
 	{
 		SetFilePointer(Fichier, 0, 0, 2);
-		WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//écrit joueur à la fin du fichier
+		WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//Ã©crit joueur Ã  la fin du fichier
 	}
 	else
 	{
-		SetFilePointer(Fichier, 0, 0, 0);//remet le pointer au début du fichier
+		SetFilePointer(Fichier, 0, 0, 0);//remet le pointer au dÃ©but du fichier
 		//boucle qui cherche le joueur
 		while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != P.Nom && NbByte != 0) {}
 
-		//écriture du joueur à sa position
+		//Ã©criture du joueur Ã  sa position
 		if (NbByte > 0)
 		{
 			SetFilePointer(Fichier, -StructLong, 0, 1);
-			WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//réécrit joueur à sa position
+			WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//rÃ©Ã©crit joueur Ã  sa position
 		}
 	
 	}
 
 	return true;
-}
+}*/
 
 /*
 DWORD WINAPI GestionGame(LPVOID lParam)
