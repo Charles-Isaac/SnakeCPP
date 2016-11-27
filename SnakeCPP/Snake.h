@@ -2,18 +2,19 @@
 #include "Types.h"
 class Snake
 {
-	//ICI vont les variable privés:
-	//Oui, elle sont tous publiques pour le moment
 
 
 public: //Met TOUTES le variables membres publiques
 	Point *m_Position; //Tableau circulaire des segments du corp
 	int m_IndexTete;
-	int m_Vitesse;
 	int m_LongueurDuSerpentCourant;
+private:
+	//ICI vont les variable privés:
+	//Oui, elle sont tous publiques pour le moment
+	int m_Vitesse;
 	char m_Direction;
-
 	//Trois constructeur surchargés
+public:
 	Snake::Snake()
 	{
 		m_Position = new Point[5];
