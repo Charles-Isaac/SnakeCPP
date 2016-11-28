@@ -183,7 +183,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 	{
 		// Si le serpent entre en collision :
-		if (serp.Update(Direction, m_Limite) || serp2.Update(Direction, m_Limite))
+		if (serp.Update(Direction, m_Limite) || serp2.Update(serp2.m_Direction, m_Limite))
 		{
 			KillTimer(hWndJ1, 1);
 			KillTimer(hWndJ2, 2);
@@ -197,7 +197,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:
 	{
 		// Direction du serpent du joueur 1 selon " W A S D " :
-		SendMessage(hWndJ1, WM_SETTEXT, Direction = (char)wParam, NULL);
+		Direction = (char)wParam;
 
 		// Direction du serpent du joueur 2 selon les flèches :
 		switch (Direction)
@@ -227,7 +227,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
 			{
-				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
+				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, 
+					  serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
 			}
 		}
 
@@ -236,7 +237,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			for (int I = 0; I < serp2.m_LongueurDuSerpentCourant; I++)
 			{
-				Rectangle(hdc, serp2.m_Position[I].X, serp2.m_Position[I].Y, serp2.m_Position[I].X + 10, serp2.m_Position[I].Y + 10);
+				Rectangle(hdc, serp2.m_Position[I].X, serp2.m_Position[I].Y, 
+					  serp2.m_Position[I].X + 10, serp2.m_Position[I].Y + 10);
 			}
 		}
 
