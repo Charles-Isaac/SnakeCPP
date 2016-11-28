@@ -196,40 +196,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_KEYDOWN:
 	{
-		// Direction du serpent selon " W A S D " :
-		Direction = (char)wParam;
+		// Direction du serpent du joueur 1 selon " W A S D " :
+		SendMessage(hWndJ1, WM_SETTEXT, Direction = (char)wParam, NULL);
 
-		// Direction du serpent joueur 2 selon les flèches :
-		/*switch (Direction)
+		// Direction du serpent du joueur 2 selon les flèches :
+		switch (Direction)
 		{
 		case VK_UP:
-		SendMessage(hWndJ2, WM_SETTEXT, Direction='W', NULL);
+		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'W', NULL);
 		break;
 		case VK_DOWN:
-		SendMessage(hWndJ2, WM_SETTEXT, Direction = 'S', NULL);
+		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'S', NULL);
 		break;
 		case VK_LEFT:
-		SendMessage(hWndJ2, WM_SETTEXT, Direction = 'A', NULL);
+		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'A', NULL);
 		break;
 		case VK_RIGHT:
-		SendMessage(hWndJ2, WM_SETTEXT, Direction = 'D', NULL);
+		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'D', NULL);
 		break;
-		}*/
-		/*switch (serp2.m_Direction)
-		{
-		case VK_UP:
-		Direction = 'W';
-		break;
-		case VK_DOWN:
-		Direction = 'S';
-		break;
-		case VK_LEFT:
-		Direction = 'A';
-		break;
-		case VK_RIGHT:
-		Direction = 'D';
-		break;
-		}*/
+		}
 	}
 	break;
 	case WM_PAINT:
