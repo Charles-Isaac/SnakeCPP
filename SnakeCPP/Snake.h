@@ -8,12 +8,12 @@ public: //Met TOUTES le variables membres publiques
 	Point *m_Position; //Tableau circulaire des segments du corp
 	int m_IndexTete;
 	int m_LongueurDuSerpentCourant;
+	char m_Direction;
 private:
-	//ICI vont les variable privés:
+	//ICI vont les variable privÃ©s:
 	//Oui, elle sont tous publiques pour le moment
 	int m_Vitesse;
-	char m_Direction;
-	//Trois constructeur surchargés
+	//Trois constructeur surchargÃ©s
 public:
 	Snake::Snake()
 	{
