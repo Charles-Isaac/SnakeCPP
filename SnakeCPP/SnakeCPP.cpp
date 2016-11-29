@@ -132,11 +132,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	int H = GetDeviceCaps(hDC, VERTRES);
 
 	// Limites de déplacement du serpent :
-	m_Limite = Point(L / 2, H - 40);
+	m_Limite = Point(L / 2, H);
 
 	// Postion des fenêtres :
-	::SetWindowPos(hWndJ1, NULL, 0, 0, L / 2, H - 40, SWP_NOZORDER | SWP_FRAMECHANGED);
-	::SetWindowPos(hWndJ2, NULL, L - L / 2, 0, L / 2, H - 40, SWP_NOZORDER | SWP_FRAMECHANGED);
+	::SetWindowPos(hWndJ1, NULL, 0, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
+	::SetWindowPos(hWndJ2, NULL, L - L / 2, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
 
 	//DWORD IDThread;
 	//HANDLE handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&GestionGame, NULL,NULL, &IDThread);  
