@@ -2,10 +2,9 @@
 #include "SnakeCPP.h"
 #include "Snake.h"
 #include <time.h>
-
+#include <stdio.h>
 
 #define MAX_LOADSTRING 100
-
 
 //Déclaration de la structure joueur :
 struct SJoueur
@@ -37,8 +36,8 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-//BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
-//BOOL				EcritureFichier(bool Joueur, SJoueur P);//écrit dans le fichier à la fin si je joueur n'existe pas
+BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
+BOOL				EcritureFichier(bool Joueur, SJoueur P);//écrit dans le fichier à la fin si je joueur n'existe pas
 //DWORD WINAPI		GestionGame(LPVOID lParam); //méthode pour thread															//sinon écrit a sa position
 
 
@@ -114,7 +113,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hInst = hInstance;
 
 	// Création de la fenêtre de droite :
-	hWndJ1 = CreateWindowEx(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
+	hWndJ1 = CreateWindowExW(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
 		szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
 	// Ouverture du même processus :
@@ -123,7 +122,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hWndJ2 = GetActiveWindow();
 
 	// Création de la fenêtre de gauche :
-	hWndJ2 = CreateWindowEx(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
+	hWndJ2 = CreateWindowExW(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
 		szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
 	// Largeur et hauteur de l'écran :
@@ -219,27 +218,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_PAINT:
 	{
+		char Aff[100];
+		int n;
+
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
 
-		// Dessine le serpent Joueur1 :
+		//Joueur1
 		if (hWnd == hWndJ1)
 		{
+			//Dessine le serpent
 			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
 			{
 				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, 
 					  serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
 			}
+
+			//Affiche les informations
+			n = sprintf_s(Aff, "Nom: %s, Nombre de victoires: %i \0", Joueur1.Nom, Joueur1.NbreVictoire);
+			TextOut(hdc ,m_Limite.X / 2, 10, Aff,n);
 		}
 
-		// Dessine le serpent Joueur2 :
+		//Joueur2
 		if (hWnd == hWndJ2)
 		{
+			//Dessine le serpent
 			for (int I = 0; I < serp2.m_LongueurDuSerpentCourant; I++)
 			{
 				Rectangle(hdc, serp2.m_Position[I].X, serp2.m_Position[I].Y, 
 					  serp2.m_Position[I].X + 10, serp2.m_Position[I].Y + 10);
 			}
+
+			//Affiche les informations
+			n = sprintf_s(Aff, "Nom: %s, Nombre de victoires: %i \0", Joueur2.Nom, Joueur2.NbreVictoire);
+			TextOut(hdc, m_Limite.X / 2, 10, Aff, n);
 		}
 
 		EndPaint(hWnd, &ps);
@@ -267,14 +279,54 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		return (INT_PTR)TRUE;
 
 	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		if (LOWORD(wParam) == IDOK)
 		{
+			char J1[50];
+			char J2[50];
+			J1[0] = 0;
+			J2[0] = 0;
+
+			GetDlgItemText(hDlg, IDC_TXTJ1, J1, 50);
+			GetDlgItemText(hDlg, IDC_TXTJ2, J2, 50);
+
+			//Vérifie si un joueur a été saisi
+			if (J1[0] == 0)
+			{
+				MessageBoxA(hDlg, "Veuillez entrer le joueur 1", "Erreur", MB_OK);
+				return (INT_PTR)TRUE;
+			}
+			if (J2[0] == 0)
+			{
+				MessageBoxA(hDlg, "Veuillez entrer le joueur 2", "Erreur", MB_OK);
+				return (INT_PTR)TRUE;
+			}
+			//Vérifie s'il s'agit de joueurs différents
+			if (strcmp(J1, J2) == 0)
+			{
+				MessageBoxA(hDlg, "Veuillez entrer 2 joueurs differents", "Erreur", MB_OK);
+				return (INT_PTR)TRUE;
+			}
+
+			//Vérifie si les joueurs sont présents et entre les info
+			if (!LectureFichier(J1, 1))
+			{
+				EcritureFichier(false, Joueur1);
+			}
+			if (!LectureFichier(J2, 2))
+			{
+				EcritureFichier(false, Joueur2);
+			}
+
 			// Initialise le Timer :
-			SetTimer(hWndJ1, 1, 1000, NULL);
-			SetTimer(hWndJ2, 2, 1000, NULL);
+			SetTimer(hWndJ1, 1, 200, NULL);
+			SetTimer(hWndJ2, 2, 200, NULL);
 
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
+		}
+		if (LOWORD(wParam) == IDCANCEL)
+		{
+			SendMessage(hWndJ1, WM_CLOSE, 0, 0);
 		}
 		break;
 	}
@@ -282,18 +334,29 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
+/*INT LectureFichier(WCHAR Nom[], int Joueur,SJoueur &J)
+{
+	WCHAR Recup[50];
+	
 
+	if (m_Fichier == NULL)
+	{
+		//m_Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	}
+
+	return -1;
+}*/
 
 
 //fonction de lecture dans le fichier binaire
-/*BOOL LectureFichier(char Nom[], int Joueur)
+BOOL LectureFichier(char Nom[], int Joueur)
 {
 DWORD NbByte;
 SJoueur J;
 int StructLong = sizeof(SJoueur);
 if (Fichier == NULL)
 {
-Fichier = CreateFile(".\Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 }
 if (Fichier == INVALID_HANDLE_VALUE)
 {
@@ -301,35 +364,49 @@ return false;
 }
 SetFilePointer(Fichier, 0, 0, 0);
 //Boucle de recherche
-while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}
+while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && strcmp(J.Nom,Nom) != 0 && NbByte != 0) {}
+//while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}
 
-if (NbByte == 0)//Joueur non trouvé
-{
-return false;
-}
-else
-{
+
 if (Joueur == 1)
 {
-Joueur1 = J; //remplie la structure du joueur 1
+	if (NbByte == 0)//Joueur non trouvé
+	{
+		strcpy_s(Joueur1.Nom, Nom);
+		Joueur1.NbreVictoire = 0;
+		return false;
+	}
+	else
+	{
+		Joueur1 = J; //remplit la structure du joueur 1
+	}
 }
 else
 {
-Joueur2 = J; //remplie la structure du joueur 2
-}
+	if (NbByte == 0)//Joueur non trouvé
+	{
+		strcpy_s(Joueur2.Nom, Nom);
+		Joueur2.NbreVictoire = 0;
+		return false;
+	}
+	else
+	{
+		Joueur2 = J; //remplit la structure du joueur 2
+	}
+	
 }
 return true;
-}*/
+}
 
 
-/*BOOL EcritureFichier(bool Joueur, SJoueur P)
+BOOL EcritureFichier(bool Joueur, SJoueur P)
 {
 SJoueur J;
 DWORD NbByte;
 int StructLong = sizeof(SJoueur);
 if (Fichier == NULL)
 {
-//Fichier = CreateFile(".\Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 }
 if (Fichier == INVALID_HANDLE_VALUE)
 {
@@ -355,7 +432,7 @@ WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//réécrit joueur à sa posit
 
 }
 return true;
-}*/
+}
 
 /*
 DWORD WINAPI GestionGame(LPVOID lParam)
