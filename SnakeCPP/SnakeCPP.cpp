@@ -3,6 +3,9 @@
 #include "Snake.h"
 #include <time.h>
 #include <stdio.h>
+#include <winuser.h>
+#include <complex.h>
+#include <complex>
 
 #define MAX_LOADSTRING 100
 
@@ -29,7 +32,8 @@ Snake serp = Snake(11, 20);
 Snake serp2 = Snake(11, 20);
 Point m_Limite;
 char Direction = 'D';
-
+int g_ctr;
+bool ThreadLoop = true;
 
 // Pré-déclarations des fonctions :
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -38,6 +42,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
 BOOL				EcritureFichier(bool Joueur, SJoueur P);//écrit dans le fichier à la fin si je joueur n'existe pas
+VOID				CtrThread(VOID);
 //DWORD WINAPI		GestionGame(LPVOID lParam); //méthode pour thread															//sinon écrit a sa position
 
 
@@ -114,7 +119,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	// Création de la fenêtre de droite :
 	hWndJ1 = CreateWindowExW(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
-		szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+		szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
 	// Ouverture du même processus :
 	DWORD IdentifiantProc = GetProcessId(hWndJ1);
@@ -138,6 +143,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	::SetWindowPos(hWndJ2, NULL, L - L / 2, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
 
 	//DWORD IDThread;
+	
+
+
+
+	
+	HANDLE ctrH;
+	DWORD tID;
+
+	g_ctr = 0;
+	ctrH = CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(&CtrThread), nullptr, 0, &tID);
+
+	if (ctrH == nullptr)
+		PostAppMessage(1, 1, 1, 1);//crash
+
 	//HANDLE handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&GestionGame, NULL,NULL, &IDThread);  
 
 	if (!hWndJ1)
@@ -152,6 +171,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	UpdateWindow(hWndJ2);
 
 	return TRUE;
+}
+
+void CtrThread(void)
+{
+	int N = 3;
+	g_ctr = 2;
+	while (ThreadLoop)
+	{
+		int i;
+		for (i = 3; (N % i) != 0 && i < (std::sqrt(N) + 1); i += 2);
+		int g = std::sqrt(N);
+		if (i >= std::sqrt(N)+1)
+		{
+			g_ctr = N;
+		}
+		N += 2;
+	}
+	
 }
 
 
@@ -186,7 +223,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			KillTimer(hWndJ1, 1);
 			KillTimer(hWndJ2, 2);
-			MessageBoxA(hWnd, "boom bitch", "Collision genre", NULL);
+			char* buff = new char[100];
+			
+			_itoa_s(g_ctr, buff,100,10);
+			MessageBoxA(hWnd, buff, "Collision genre", NULL);
 		}
 
 		InvalidateRect(hWnd, NULL, true);
@@ -228,10 +268,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hWnd == hWndJ1)
 		{
 			//Dessine le serpent
-			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
+			for (int j = 0; j < serp.m_LongueurDuSerpentCourant; j++)
 			{
-				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, 
-					  serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
+				Rectangle(hdc, serp.m_Position[j].X, serp.m_Position[j].Y, 
+					  serp.m_Position[j].X + 10, serp.m_Position[j].Y + 10);
 			}
 
 			//Affiche les informations
@@ -243,10 +283,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hWnd == hWndJ2)
 		{
 			//Dessine le serpent
-			for (int I = 0; I < serp2.m_LongueurDuSerpentCourant; I++)
+			for (int k = 0; k < serp2.m_LongueurDuSerpentCourant; k++)
 			{
-				Rectangle(hdc, serp2.m_Position[I].X, serp2.m_Position[I].Y, 
-					  serp2.m_Position[I].X + 10, serp2.m_Position[I].Y + 10);
+				Rectangle(hdc, serp2.m_Position[k].X, serp2.m_Position[k].Y, 
+					  serp2.m_Position[k].X + 10, serp2.m_Position[k].Y + 10);
 			}
 
 			//Affiche les informations

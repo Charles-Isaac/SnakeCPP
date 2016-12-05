@@ -1,2 +1,3 @@
-﻿  SnakeCPP.vcxproj -> C:\Users\Patrick\Desktop\SnakeCPP-master\SnakeCPP-master\Debug\SnakeCPP.exe
-  SnakeCPP.vcxproj -> C:\Users\Patrick\Desktop\SnakeCPP-master\SnakeCPP-master\Debug\SnakeCPP.pdb (Full PDB)
+﻿  SnakeCPP.cpp
+c:\users\charles-isaac\documents\visual studio 2015\projects\snakecpp\snakecpp\snakecpp.cpp(184): warning C4244: 'initialisation' : conversion de 'double' en 'int', perte possible de données
+  SnakeCPP.vcxproj -> C:\Users\Charles-Isaac\Documents\Visual Studio 2015\Projects\SnakeCPP\Debug\SnakeCPP.exe

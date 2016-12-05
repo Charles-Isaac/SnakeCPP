@@ -82,7 +82,7 @@ bool Snake::Update(char DirectionDuDeplacement, Point WindowSize)
 			break;
 		default:
 			throw("Direction invalide");
-			break;
+			//break;
 		}
 		break;
 	}
