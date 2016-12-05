@@ -47,9 +47,6 @@
     <ClCompile Include="Snake.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\CPPConsoleTest\CPPConsoleTest\Snake.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SnakeCPP.rc">

@@ -333,21 +333,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-
-/*INT LectureFichier(WCHAR Nom[], int Joueur,SJoueur &J)
-{
-	WCHAR Recup[50];
-	
-
-	if (m_Fichier == NULL)
-	{
-		//m_Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	}
-
-	return -1;
-}*/
-
-
 //fonction de lecture dans le fichier binaire
 BOOL LectureFichier(char Nom[], int Joueur)
 {
@@ -401,39 +386,38 @@ return true;
 
 BOOL EcritureFichier(bool Joueur, SJoueur P)
 {
-SJoueur J;
-DWORD NbByte;
-int StructLong = sizeof(SJoueur);
-if (Fichier == NULL)
-{
-	Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-}
-if (Fichier == INVALID_HANDLE_VALUE)
-{
-return false;
-}
-//si joueur n'est pas dans le fichier l'écrit à la fin du fichier
-if (Joueur == false)
-{
-SetFilePointer(Fichier, 0, 0, 2);
-WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//écrit joueur à la fin du fichier
-}
-else
-{
-SetFilePointer(Fichier, 0, 0, 0);//remet le pointer au début du fichier
-//boucle qui cherche le joueur
-while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != P.Nom && NbByte != 0) {}
-//écriture du joueur à sa position
-if (NbByte > 0)
-{
-SetFilePointer(Fichier, -StructLong, 0, 1);
-WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//réécrit joueur à sa position
-}
+	SJoueur J;
+	DWORD NbByte;
+	int StructLong = sizeof(SJoueur);
+	if (Fichier == NULL)
+	{
+		Fichier = CreateFile("Joueur.bd", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	}
+	if (Fichier == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	//si joueur n'est pas dans le fichier l'écrit à la fin du fichier
+	if (Joueur == false)
+	{
+		SetFilePointer(Fichier, 0, 0, 2);
+		WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//écrit joueur à la fin du fichier
+	}
+	else
+	{
+		SetFilePointer(Fichier, 0, 0, 0);//remet le pointer au début du fichier
+		//boucle qui cherche le joueur
+		while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != P.Nom && NbByte != 0) {}
+		//écriture du joueur à sa position
+		if (NbByte > 0)
+		{
+			SetFilePointer(Fichier, -StructLong, 0, 1);
+			WriteFile(Fichier, &P, StructLong, &NbByte, NULL);//réécrit joueur à sa position
+		}
 
+	}
+	return true;
 }
-return true;
-}
-
 /*
 DWORD WINAPI GestionGame(LPVOID lParam)
 {
