@@ -50,43 +50,50 @@ bool Snake::Update(char DirectionDuDeplacement, Point WindowSize)
 	switch (DirectionDuDeplacement)
 	{
 	case 'W':
+		if (m_Direction != 'S')
+		{
+			m_Direction = DirectionDuDeplacement;
+		}
+		break;
+	case 'A':
+		if (m_Direction != 'D')
+		{
+			m_Direction = DirectionDuDeplacement;
+		}
+		break;
+	case 'S':
+		if (m_Direction != 'W')
+		{
+			m_Direction = DirectionDuDeplacement;
+		}
+		break;
+	case 'D':
+		if (m_Direction != 'A')
+		{
+			m_Direction = DirectionDuDeplacement;
+		}
+		break;
+	default:
+		break;
+	}
+	switch (m_Direction)
+	{
+	case 'W':
 		(*(m_Position + m_IndexTete)).Y -= m_Vitesse;
-		m_Direction = DirectionDuDeplacement;
 		break;
 	case 'A':
 		(*(m_Position + m_IndexTete)).X -= m_Vitesse;
-		m_Direction = DirectionDuDeplacement;
 		break;
 	case 'S':
 		(*(m_Position + m_IndexTete)).Y += m_Vitesse;
-		m_Direction = DirectionDuDeplacement;
 		break;
 	case 'D':
 		(*(m_Position + m_IndexTete)).X += m_Vitesse;
-		m_Direction = DirectionDuDeplacement;
 		break;
 	default:
-		switch (m_Direction)
-		{
-		case 'W':
-			(*(m_Position + m_IndexTete)).Y -= m_Vitesse;
-			break;
-		case 'A':
-			(*(m_Position + m_IndexTete)).X -= m_Vitesse;
-			break;
-		case 'S':
-			(*(m_Position + m_IndexTete)).Y += m_Vitesse;
-			break;
-		case 'D':
-			(*(m_Position + m_IndexTete)).X += m_Vitesse;
-			break;
-		default:
-			throw("Direction invalide");
-			//break;
-		}
-		break;
+		throw("Direction invalide");
+		//break;
 	}
-
 
 	if ((*(m_Position + m_IndexTete)).Y > WindowSize.Y || (*(m_Position + m_IndexTete)).Y < 0 || (*(m_Position + m_IndexTete)).X > WindowSize.X || (*(m_Position + m_IndexTete)).X < 0)
 	{
