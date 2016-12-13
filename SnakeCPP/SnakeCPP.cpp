@@ -3,9 +3,6 @@
 #include "Snake.h"
 #include <time.h>
 #include <stdio.h>
-#include <winuser.h>
-#include <complex.h>
-#include <complex>
 
 #define MAX_LOADSTRING 100
 
@@ -27,13 +24,20 @@ HWND hWndJ1;
 HWND hWndJ2;
 INT APP;
 
-SJoueur Joueur1, Joueur2;
+CRITICAL_SECTION cSect;
+HANDLE ThreadHandle;
+HANDLE g_mut;
+
+DWORD AutreProcId;
+STARTUPINFO sinfo;
+PROCESS_INFORMATION infop;
+
+SJoueur Joueur1;
 Snake serp = Snake(11, 20);
-Snake serp2 = Snake(11, 20);
 Point m_Limite;
 char Direction = 'D';
-int g_ctr;
-bool ThreadLoop = true;
+bool JoueurPret = false, AutreJoueurPret = false, JoueurPrinc = false;
+
 
 // Pré-déclarations des fonctions :
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -42,10 +46,8 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 BOOL				LectureFichier(char Nom[], int Joueur); //cherche le joueur si ne trouve pas retourne faux
 BOOL				EcritureFichier(bool Joueur, SJoueur P);//écrit dans le fichier à la fin si je joueur n'existe pas
-VOID				CtrThread(VOID);
-//DWORD WINAPI		GestionGame(LPVOID lParam); //méthode pour thread															//sinon écrit a sa position
-
-
+BOOL CALLBACK		EnumFen(HWND, LPARAM);
+DWORD WINAPI ThreadAllonge(LPVOID);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -66,13 +68,48 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
+	char myPath[_MAX_PATH + 1];
+	GetModuleFileName(NULL, myPath, _MAX_PATH);
+
+	// Largeur et hauteur de l'écran :
+	HDC hDC = ::GetWindowDC(NULL);
+	int L = GetDeviceCaps(hDC, HORZRES);
+	int H = GetDeviceCaps(hDC, VERTRES);
+
+	// Limites de déplacement du serpent :
+	m_Limite = Point(L / 2, H);
+
+	//Set la position de la fenetre
+	::SetWindowPos(hWndJ1, NULL, L - L / 2, 0, L / 2, H, SWP_NOOWNERZORDER | SWP_FRAMECHANGED);;
+
+	//Génère un erreur "ERROR_ALREADY_EXISTS" si le process existe déjà (recommandé par aide windows WinMain)
+	g_mut = CreateMutex(NULL, TRUE, "poil");
+
+	//Si un 2e process n'existe pas déjà crée un 2e process
+	if (GetLastError() != ERROR_ALREADY_EXISTS)
+	{
+		::SetWindowPos(hWndJ1, NULL, 0, 0, L / 2, H, SWP_FRAMECHANGED);
+		CreateProcess(myPath,NULL, 0, 0, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &sinfo, &infop);
+		AutreProcId = infop.dwProcessId;
+		JoueurPrinc = true;
+	}
+
+	Sleep(500);
+
+	//EnumWindows(EnumFen, AutreProcId);
+	EnumWindows(EnumFen, NULL);
 	// Ouvre le DialogBox About à l'ouverture de la fenêtre J1 :
 	DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWndJ1, About);
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SNAKECPP));
 
-	MSG msg;
+	
 
+	//Initialisation de la section critique déplacement/Allonger
+	InitializeCriticalSection(&cSect);
+
+
+	MSG msg;
 	// Boucle de messages principale :
 	while (GetMessage(&msg, nullptr, 0, 0))
 	{
@@ -82,6 +119,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 	}
+	
 
 	return (int)msg.wParam;
 }
@@ -119,76 +157,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	// Création de la fenêtre de droite :
 	hWndJ1 = CreateWindowExW(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
-		szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-	// Ouverture du même processus :
-	DWORD IdentifiantProc = GetProcessId(hWndJ1);
-	HANDLE h2 = OpenProcess(IdentifiantProc, TRUE, GetCurrentProcessId());
-	hWndJ2 = GetActiveWindow();
-
-	// Création de la fenêtre de gauche :
-	hWndJ2 = CreateWindowExW(WS_EX_APPWINDOW | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME, szWindowClass,
 		szTitle, WS_OVERLAPPED | WS_POPUP, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
-
-	// Largeur et hauteur de l'écran :
-	HDC hDC = ::GetWindowDC(NULL);
-	int L = GetDeviceCaps(hDC, HORZRES);
-	int H = GetDeviceCaps(hDC, VERTRES);
-
-	// Limites de déplacement du serpent :
-	m_Limite = Point(L / 2, H);
-
-	// Postion des fenêtres :
-	::SetWindowPos(hWndJ1, NULL, 0, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
-	::SetWindowPos(hWndJ2, NULL, L - L / 2, 0, L / 2, H, SWP_NOZORDER | SWP_FRAMECHANGED);
-
-	//DWORD IDThread;
-	
-
-
-
-	
-	HANDLE ctrH;
-	DWORD tID;
-
-	g_ctr = 0;
-	ctrH = CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(&CtrThread), nullptr, 0, &tID);
-
-	if (ctrH == nullptr)
-		PostAppMessage(1, 1, 1, 1);//crash
-
-	//HANDLE handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&GestionGame, NULL,NULL, &IDThread);  
-
-	if (!hWndJ1)
-	{
-		return FALSE;
-	}
 
 	// Affichage des fenêtres :
 	ShowWindow(hWndJ1, nCmdShow);
 	UpdateWindow(hWndJ1);
-	ShowWindow(hWndJ2, nCmdShow);
-	UpdateWindow(hWndJ2);
 
 	return TRUE;
-}
-
-void CtrThread(void)
-{
-	int N = 3;
-	g_ctr = 2;
-	while (ThreadLoop)
-	{
-		int i;
-		for (i = 3; (N % i) != 0 && i < (std::sqrt(N) + 1); i += 2);
-		int g = std::sqrt(N);
-		if (i >= std::sqrt(N)+1)
-		{
-			g_ctr = N;
-		}
-		N += 2;
-	}
-	
 }
 
 
@@ -219,18 +194,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 	{
 		// Si le serpent entre en collision :
-		if (serp.Update(Direction, m_Limite) || serp2.Update(serp2.m_Direction, m_Limite))
+		EnterCriticalSection(&cSect);
+		if (serp.Update(Direction, m_Limite))
 		{
 			KillTimer(hWndJ1, 1);
-			KillTimer(hWndJ2, 2);
-			char* buff = new char[100];
-			
-			_itoa_s(g_ctr, buff,100,10);
-			MessageBoxA(hWnd, buff, "Collision genre", NULL);
+			TerminateThread(ThreadHandle, 0);
+			SendMessage(hWndJ2, 0x8002, 0, 0);
 		}
+		LeaveCriticalSection(&cSect);
 
 		InvalidateRect(hWnd, NULL, true);
 		UpdateWindow(hWnd);
+	}
+	break;
+
+	case WM_LBUTTONDOWN:
+	{
+		if (JoueurPrinc)
+		{
+			SetForegroundWindow(hWndJ1);
+		}
+		else
+		{
+			SetForegroundWindow(hWndJ2);
+		}
 	}
 	break;
 	case WM_KEYDOWN:
@@ -238,20 +225,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Direction du serpent du joueur 1 selon " W A S D " :
 		Direction = (char)wParam;
 
+	
 		// Direction du serpent du joueur 2 selon les flèches :
 		switch (Direction)
 		{
 		case VK_UP:
-		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'W', NULL);
+		SendMessage(hWndJ2, 0x8001,'W', NULL);
 		break;
 		case VK_DOWN:
-		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'S', NULL);
+		SendMessage(hWndJ2, 0x8001,'S', NULL);
 		break;
 		case VK_LEFT:
-		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'A', NULL);
+		SendMessage(hWndJ2, 0x8001,'A', NULL);
 		break;
 		case VK_RIGHT:
-		SendMessage(hWndJ2, WM_SETTEXT, serp2.m_Direction = 'D', NULL);
+		SendMessage(hWndJ2, 0x8001,'D', NULL);
 		break;
 		}
 	}
@@ -268,10 +256,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hWnd == hWndJ1)
 		{
 			//Dessine le serpent
-			for (int j = 0; j < serp.m_LongueurDuSerpentCourant; j++)
+			for (int I = 0; I < serp.m_LongueurDuSerpentCourant; I++)
 			{
-				Rectangle(hdc, serp.m_Position[j].X, serp.m_Position[j].Y, 
-					  serp.m_Position[j].X + 10, serp.m_Position[j].Y + 10);
+				Rectangle(hdc, serp.m_Position[I].X, serp.m_Position[I].Y, 
+					  serp.m_Position[I].X + 10, serp.m_Position[I].Y + 10);
 			}
 
 			//Affiche les informations
@@ -279,25 +267,75 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TextOut(hdc ,m_Limite.X / 2, 10, Aff,n);
 		}
 
-		//Joueur2
-		if (hWnd == hWndJ2)
-		{
-			//Dessine le serpent
-			for (int k = 0; k < serp2.m_LongueurDuSerpentCourant; k++)
-			{
-				Rectangle(hdc, serp2.m_Position[k].X, serp2.m_Position[k].Y, 
-					  serp2.m_Position[k].X + 10, serp2.m_Position[k].Y + 10);
-			}
-
-			//Affiche les informations
-			n = sprintf_s(Aff, "Nom: %s, Nombre de victoires: %i \0", Joueur2.Nom, Joueur2.NbreVictoire);
-			TextOut(hdc, m_Limite.X / 2, 10, Aff, n);
-		}
-
 		EndPaint(hWnd, &ps);
 	}
 	break;
+
+	case 0x8000: //Autre joueur prêt
+	{
+		AutreJoueurPret = true;
+		if (AutreJoueurPret && JoueurPret)
+		{
+			SetTimer(hWndJ1, 1, 200, NULL);
+			ThreadHandle = CreateThread(NULL, 0, ThreadAllonge, 0, 0, NULL);
+			SetThreadPriority(ThreadHandle, 1);
+		}
+	}
+	break;
+	case 0x8001: //envoi de direction
+	{
+		Direction = (char)wParam;
+	}
+	break;
+	case 0x8002: //Crash de l'adversaire
+	{
+		KillTimer(hWndJ1, 1);
+		TerminateThread(ThreadHandle, 0);
+		Joueur1.NbreVictoire++;
+		AutreJoueurPret = false;
+		int res;
+		if (JoueurPrinc)
+		{
+			res = MessageBox(hWndJ1, "Victoire de joueur 1. Voulez vous rejouer?", "Fin", MB_YESNO);
+		}
+		else
+		{
+			res = MessageBox(hWndJ1, "Victoire de joueur 2. Voulez vous rejouer?", "Fin", MB_YESNO);
+		}
+		if (res == IDYES)
+		{
+			SendMessage(hWndJ1, 0x8003, 0, 0);
+			SendMessage(hWndJ2, 0x8003, 0, 0);
+		}
+		else
+		{
+			SendMessage(hWndJ1, WM_CLOSE, 0, 0);
+			SendMessage(hWndJ2, WM_CLOSE, 0, 0);
+		}
+	}
+	break;
+	case 0x8003: //Reset du jeu
+	{
+		JoueurPret = true;
+		Direction = 'D';
+		serp = Snake(11, 20);
+		SendMessage(hWndJ2, 0x8000, 0, 0);
+		if (JoueurPrinc)
+		{
+			SetForegroundWindow(hWndJ1);
+		}
+		else
+		{
+			SetForegroundWindow(hWndJ2);
+		}
+	}
+	break;
+
 	case WM_DESTROY:
+		WaitForSingleObject(g_mut, 100);
+		EcritureFichier(true, Joueur1);
+		ReleaseMutex(g_mut);
+		SendMessage(hWndJ2, WM_CLOSE, 0, 0);
 		PostQuitMessage(0);
 		break;
 	default:
@@ -322,28 +360,17 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		if (LOWORD(wParam) == IDOK)
 		{
 			char J1[50];
-			char J2[50];
+
 			J1[0] = 0;
-			J2[0] = 0;
+
 
 			GetDlgItemText(hDlg, IDC_TXTJ1, J1, 50);
-			GetDlgItemText(hDlg, IDC_TXTJ2, J2, 50);
+
 
 			//Vérifie si un joueur a été saisi
 			if (J1[0] == 0)
 			{
 				MessageBoxA(hDlg, "Veuillez entrer le joueur 1", "Erreur", MB_OK);
-				return (INT_PTR)TRUE;
-			}
-			if (J2[0] == 0)
-			{
-				MessageBoxA(hDlg, "Veuillez entrer le joueur 2", "Erreur", MB_OK);
-				return (INT_PTR)TRUE;
-			}
-			//Vérifie s'il s'agit de joueurs différents
-			if (strcmp(J1, J2) == 0)
-			{
-				MessageBoxA(hDlg, "Veuillez entrer 2 joueurs differents", "Erreur", MB_OK);
 				return (INT_PTR)TRUE;
 			}
 
@@ -352,20 +379,26 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				EcritureFichier(false, Joueur1);
 			}
-			if (!LectureFichier(J2, 2))
+
+			JoueurPret = true;
+			SendMessage(hWndJ2, 0x8000, 0, 0);
+			if (JoueurPret && AutreJoueurPret)
 			{
-				EcritureFichier(false, Joueur2);
+				SetTimer(hWndJ1, 1, 200, NULL);
+				ThreadHandle = CreateThread(NULL, 0, ThreadAllonge, 0, 0, NULL);
+				SetThreadPriority(ThreadHandle, 1);
 			}
 
-			// Initialise le Timer :
-			SetTimer(hWndJ1, 1, 200, NULL);
-			SetTimer(hWndJ2, 2, 200, NULL);
-
 			EndDialog(hDlg, LOWORD(wParam));
+			if (!JoueurPrinc)
+			{
+				SetForegroundWindow(hWndJ2);
+			}
 			return (INT_PTR)TRUE;
 		}
 		if (LOWORD(wParam) == IDCANCEL)
 		{
+			SendMessage(hWndJ2, WM_CLOSE, 0, 0);
 			SendMessage(hWndJ1, WM_CLOSE, 0, 0);
 		}
 		break;
@@ -388,13 +421,10 @@ if (Fichier == INVALID_HANDLE_VALUE)
 return false;
 }
 SetFilePointer(Fichier, 0, 0, 0);
+
 //Boucle de recherche
 while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && strcmp(J.Nom,Nom) != 0 && NbByte != 0) {}
-//while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != Nom && NbByte != 0) {}
 
-
-if (Joueur == 1)
-{
 	if (NbByte == 0)//Joueur non trouvé
 	{
 		strcpy_s(Joueur1.Nom, Nom);
@@ -405,25 +435,12 @@ if (Joueur == 1)
 	{
 		Joueur1 = J; //remplit la structure du joueur 1
 	}
-}
-else
-{
-	if (NbByte == 0)//Joueur non trouvé
-	{
-		strcpy_s(Joueur2.Nom, Nom);
-		Joueur2.NbreVictoire = 0;
-		return false;
-	}
-	else
-	{
-		Joueur2 = J; //remplit la structure du joueur 2
-	}
-	
-}
+	CloseHandle(Fichier);
+	Fichier = NULL;
 return true;
 }
 
-
+//Écriture des joueurs dans le fichier
 BOOL EcritureFichier(bool Joueur, SJoueur P)
 {
 	SJoueur J;
@@ -447,7 +464,7 @@ BOOL EcritureFichier(bool Joueur, SJoueur P)
 	{
 		SetFilePointer(Fichier, 0, 0, 0);//remet le pointer au début du fichier
 		//boucle qui cherche le joueur
-		while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && J.Nom != P.Nom && NbByte != 0) {}
+		while (ReadFile(Fichier, &J, StructLong, &NbByte, NULL) && strcmp(J.Nom, P.Nom) && NbByte != 0) {}
 		//écriture du joueur à sa position
 		if (NbByte > 0)
 		{
@@ -456,10 +473,48 @@ BOOL EcritureFichier(bool Joueur, SJoueur P)
 		}
 
 	}
+	CloseHandle(Fichier);
+	Fichier = NULL;
 	return true;
 }
-/*
-DWORD WINAPI GestionGame(LPVOID lParam)
+
+
+//Recherche de la fenêtre de l'autre application
+BOOL CALLBACK EnumFen(HWND hwnd, LPARAM lParam)
 {
+	char Nom1[80];
+	char Nom2[80];
+	GetWindowText(hwnd, Nom1, 80);
+	GetWindowText(hWndJ1, Nom2, 80);
+
+	if (strcmp(Nom1,Nom2) == 0 &&  hwnd != hWndJ1)
+	{
+		hWndJ2 = hwnd;
+		return FALSE;
+	}
+	return TRUE;
 }
-*/
+
+//Thread servant à allonger le serpent
+DWORD WINAPI ThreadAllonge(LPVOID lParam)
+{
+	int Vitesse = 200;
+	while(JoueurPret && AutreJoueurPret)
+	{
+		Sleep(5000);
+		EnterCriticalSection(&cSect);
+		serp.Allonger(1);
+		LeaveCriticalSection(&cSect);
+		if (JoueurPret && AutreJoueurPret)
+		{
+			KillTimer(hWndJ1, 1);
+			SetTimer(hWndJ1, 1, Vitesse, NULL);
+			if (Vitesse > 50)
+			{
+				Vitesse -= 10;
+			}
+		}
+	}
+
+	return true;
+}
